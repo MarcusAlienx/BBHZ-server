@@ -10,7 +10,7 @@ const port = process.env.PORT || 9000
 const app = express()
 // middleware
 const corsOptions = {
-  origin: ['http://localhost:5173', 'http://localhost:5174'],
+  origin: ['http://localhost:5173', 'http://localhost:5175'],
   credentials: true,
   optionSuccessStatus: 200,
 }
@@ -48,6 +48,10 @@ const client = new MongoClient(uri, {
 })
 async function run() {
   try {
+
+    const db=client.db('houzez')
+    const usersCollection=db.collection('users')
+   
     // Generate jwt token
     app.post('/jwt', async (req, res) => {
       const email = req.body
@@ -76,6 +80,23 @@ async function run() {
         res.status(500).send(err)
       }
     })
+  
+    // save user data in db
+    app.post('/users/:email', async (req, res) => {
+      const email = req.params.email
+      const user=req.body
+      const query = { email }
+
+      const isExist= await usersCollection.findOne(query)
+      if (isExist) {
+        return res.status(400).send({ message: 'user already exist' })
+      }
+      const result = await usersCollection.insertOne(user)
+      res.send(result)
+      console.log(result);
+
+    })
+
 
     // Send a ping to confirm a successful connection
     await client.db('admin').command({ ping: 1 })
