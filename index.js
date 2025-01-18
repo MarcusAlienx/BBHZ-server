@@ -232,6 +232,21 @@ async function run() {
       res.send(result)
     })
   
+
+    // get all offers
+    app.get('/offers', async (req, res) => {
+      const result = await offersCollection.find().toArray()
+      res.send(result)
+    })
+
+    // get single offer
+    app.get('/offers/:email', async (req, res) => {
+      const email = req.params.email
+      const query = {buyerEmail:email}
+      const result = await offersCollection.find(query).toArray()
+      res.send(result)
+    })
+
     // save offer data in db
     app.post('/offers', async (req, res) => {
       const offer = req.body
