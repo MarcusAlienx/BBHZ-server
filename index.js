@@ -52,6 +52,7 @@ async function run() {
     const db=client.db('houzez')
     const usersCollection=db.collection('users')
     const propertiesCollection=db.collection('properties')
+    const wishlistCollection=db.collection('wishlists')
    
     // Generate jwt token
     app.post('/jwt', async (req, res) => {
@@ -107,12 +108,46 @@ async function run() {
 
     // get all properties
     app.get('/properties', async (req, res) => {
+        try {
+          const verify = req.query.verify; 
+          const search = req.query.search; 
+          const sortByPrice = req.query.sortByPrice;
+      
+          const query = {};
+      
+          
+          if (verify) {
+            query.verificationStatus = verify;
+          }
+      
         
-      const result = await propertiesCollection.find().toArray()
-      res.send(result)
-    })
+          if (search) {
+            query.$or = [
+              { title: { $regex: search, $options: 'i' } }, 
+              { location: { $regex: search, $options: 'i' } }, 
+            ];
+          }
+      
+          
+          const sort = {};
+          if (sortByPrice === 'asc') {
+            sort.priceMin = 1;
+          } else if (sortByPrice === 'desc') {
+            sort.priceMin = -1;
+          }
+      
+          
+          const result = await propertiesCollection.find(query).sort(sort).toArray();
+      
+          res.send(result);
+        } catch (error) {
+          console.error('Error fetching properties:', error);
+          res.status(500).send({ error: 'Failed to fetch properties' });
+        }
+      });
+      
     // get single property
-    app.get('/properties/:id', async (req, res) => {
+    app.get('/propertie/:id', async (req, res) => {
       const id = req.params.id
       const query = { _id: new ObjectId(id) }
       const result = await propertiesCollection.findOne(query)
@@ -162,6 +197,13 @@ async function run() {
         }
       });
       
+
+    // save wishlist data in db
+    app.post('/wishlist', async (req, res) => {
+      const wishlist = req.body
+      const result = await wishlistCollection.insertOne(wishlist)
+      res.send(result)
+    })
 
 
 
