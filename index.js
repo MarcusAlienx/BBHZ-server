@@ -200,10 +200,18 @@ async function run() {
 
     //get all wishlist
     app.get('/wishlist', async (req, res) => {
-        
-        const result = await wishlistCollection.find().toArray()
+       const result = await wishlistCollection.find().toArray()
         res.send(result)
-    })    
+    }) 
+    
+    // get wishlist by user 
+    app.get('/wishlist/:email', async (req, res) => {
+      const email = req.params.email
+      const query = {userEmail:email}
+      const result = await wishlistCollection.find(query).toArray()
+      res.send(result)
+      
+    })
 
     // save wishlist data in db
     app.post('/wishlist', async (req, res) => {
