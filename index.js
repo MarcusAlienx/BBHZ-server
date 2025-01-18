@@ -51,6 +51,7 @@ async function run() {
 
     const db=client.db('houzez')
     const usersCollection=db.collection('users')
+    const propertiesCollection=db.collection('properties')
    
     // Generate jwt token
     app.post('/jwt', async (req, res) => {
@@ -96,6 +97,73 @@ async function run() {
       console.log(result);
 
     })
+   
+    // save property data in db
+    app.post('/properties', async (req, res) => {
+      const property = req.body
+      const result = await propertiesCollection.insertOne(property)
+      res.send(result)
+    })
+
+    // get all properties
+    app.get('/properties', async (req, res) => {
+        
+      const result = await propertiesCollection.find().toArray()
+      res.send(result)
+    })
+    // get single property
+    app.get('/properties/:id', async (req, res) => {
+      const id = req.params.id
+      const query = { _id: new ObjectId(id) }
+      const result = await propertiesCollection.findOne(query)
+      res.send(result)
+    })
+
+    // get properties by user use query
+    app.get('/propertie/:email', async (req, res) => {
+      const email = req.params.email
+      const query = {agentEmail:email}
+      const result = await propertiesCollection.find(query).toArray()
+      res.send(result)
+      
+    })
+
+    // update property status
+    app.patch('/properties/:id', async (req, res) => {
+        try {
+          const id = req.params.id;
+          const { verificationStatus } = req.body; 
+      
+        
+          if (!["verified", "rejected"].includes(verificationStatus)) {
+            return res.status(400).send({ error: "Invalid verification status" });
+          }
+      
+    
+          const query = { _id: new ObjectId(id) };
+          const updatedDoc = {
+            $set: {
+              verificationStatus: verificationStatus,
+              verified: verificationStatus === "verified", 
+            },
+          };
+      
+    
+          const result = await propertiesCollection.updateOne(query, updatedDoc);
+      
+          if (result.modifiedCount > 0) {
+            res.send({ message: "Property status updated successfully" });
+          } else {
+            res.status(404).send({ error: "Property not found or no changes made" });
+          }
+        } catch (error) {
+          console.error("Error updating property status:", error);
+          res.status(500).send({ error: "Failed to update property status" });
+        }
+      });
+      
+
+
 
 
     // Send a ping to confirm a successful connection
