@@ -53,6 +53,7 @@ async function run() {
     const usersCollection=db.collection('users')
     const propertiesCollection=db.collection('properties')
     const wishlistCollection=db.collection('wishlists')
+    const offersCollection=db.collection('offers')
    
     // Generate jwt token
     app.post('/jwt', async (req, res) => {
@@ -203,7 +204,10 @@ async function run() {
        const result = await wishlistCollection.find().toArray()
         res.send(result)
     }) 
-    
+     
+    // get single wishlist
+   
+
     // get wishlist by user 
     app.get('/wishlist/:email', async (req, res) => {
       const email = req.params.email
@@ -213,13 +217,27 @@ async function run() {
       
     })
 
+    app.get('/wishlists/:id', async (req, res) => {
+        const id = req.params.id
+        const query = { _id: new ObjectId(id) }
+        const result = await wishlistCollection.findOne(query)
+        res.send(result)
+      })
+  
+
     // save wishlist data in db
     app.post('/wishlist', async (req, res) => {
       const wishlist = req.body
       const result = await wishlistCollection.insertOne(wishlist)
       res.send(result)
     })
-
+  
+    // save offer data in db
+    app.post('/offers', async (req, res) => {
+      const offer = req.body
+      const result = await offersCollection.insertOne(offer)
+      res.send(result)
+    })
 
 
 
