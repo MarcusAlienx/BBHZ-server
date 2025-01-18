@@ -198,12 +198,21 @@ async function run() {
       });
       
 
+    //get all wishlist
+    app.get('/wishlist', async (req, res) => {
+        
+        const result = await wishlistCollection.find().toArray()
+        res.send(result)
+    })    
+
     // save wishlist data in db
     app.post('/wishlist', async (req, res) => {
       const wishlist = req.body
       const result = await wishlistCollection.insertOne(wishlist)
       res.send(result)
     })
+
+
 
 
 
