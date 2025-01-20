@@ -54,6 +54,7 @@ async function run() {
     const propertiesCollection=db.collection('properties')
     const wishlistCollection=db.collection('wishlists')
     const offersCollection=db.collection('offers')
+    const reviwesCollection=db.collection('reviews')
    
     // Generate jwt token
     app.post('/jwt', async (req, res) => {
@@ -300,7 +301,8 @@ async function run() {
         res.status(500).send({ error: 'Failed to update offers.' });
       }
     });
-
+  
+    // reject offer
 
   app.patch('/offers/:id/reject', async (req, res) => {
     try {
@@ -323,6 +325,34 @@ async function run() {
     }
   });
     
+
+
+    // get all reviews
+    app.get('/reviews', async (req, res) => {
+      const result = await reviwesCollection.find().toArray()
+      res.send(result)
+    })
+   
+  //  get review for a property
+
+  app.get('/review/:id', async (req, res) => {
+    const id = req.params.id
+    const query = { propertyId: id }
+    const result = await reviwesCollection.find(query).toArray()
+    res.send(result)
+  })
+
+
+    // save review data in db
+    app.post('/reviews', async (req, res) => {
+      const review = req.body
+      review.date = new Date()
+      
+
+      const result = await reviwesCollection.insertOne(review)
+      res.send(result)
+    })
+  
 
 
 
