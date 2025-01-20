@@ -263,12 +263,14 @@ async function run() {
       res.send(result)
     })
   
+  // update offer status
+
     app.patch('/offers/:id/accept', async (req, res) => {
       try {
-        const offerId = req.params.id; // The accepted offer's ID
-        const { propertyId } = req.body; // The property ID associated with the offer
+        const offerId = req.params.id; 
+        const { propertyId } = req.body; 
     
-        // Update the accepted offer's status to "accepted"
+       
         const acceptQuery = { _id: new ObjectId(offerId) };
         const acceptUpdate = {
           $set: {
@@ -277,10 +279,10 @@ async function run() {
         };
         await offersCollection.updateOne(acceptQuery, acceptUpdate);
     
-        // Automatically reject all other offers for the same property
+       
         const rejectQuery = {
-          propertyId: propertyId, // Filter by property ID
-          _id: { $ne: new ObjectId(offerId) }, // Exclude the accepted offer
+          propertyId: propertyId, 
+          _id: { $ne: new ObjectId(offerId) }, 
         };
         const rejectUpdate = {
           $set: {
@@ -298,6 +300,28 @@ async function run() {
         res.status(500).send({ error: 'Failed to update offers.' });
       }
     });
+
+
+  app.patch('/offers/:id/reject', async (req, res) => {
+    try {
+      const offerId = req.params.id; 
+      const { propertyId } = req.body; 
+      const rejectQuery = { _id: new ObjectId(offerId) };
+      const rejectUpdate = {
+        $set: {
+          status: 'rejected',
+        },
+      };
+      const rejectResult = await offersCollection.updateOne(rejectQuery, rejectUpdate);
+      res.send({
+        message: 'Offer rejected successfully.',
+        rejectedCount: rejectResult.modifiedCount,
+      });
+    } catch (error) {
+      console.error('Error:', error);
+      res.status(500).send({ error: 'Failed to update offers.' });
+    }
+  });
     
 
 
