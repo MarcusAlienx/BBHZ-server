@@ -114,12 +114,16 @@ async function run() {
           const verify = req.query.verify; 
           const search = req.query.search; 
           const sortByPrice = req.query.sortByPrice;
-      
+          const isAdvertised = req.query.isAdvertised;
           const query = {};
       
           
           if (verify) {
             query.verificationStatus = verify;
+          }
+
+          if (isAdvertised) {
+            query.isAdvertised = isAdvertised === 'true'; 
           }
       
         
@@ -198,7 +202,27 @@ async function run() {
           res.status(500).send({ error: "Failed to update property status" });
         }
       });
+    
       
+    // update property advertisement status
+    app.patch('/properties/:id/advertise', async (req, res) => {
+      
+        const id = req.params.id;
+        const { isAdvertised } = req.body;
+    
+        const query = { _id: new ObjectId(id) };
+        const updatedDoc = {
+          $set: {
+            isAdvertised: isAdvertised,
+          },
+        };
+    
+        const result = await propertiesCollection.updateOne(query, updatedDoc);
+        res.send(result)
+    
+     
+    });
+
 
     //get all wishlist
     app.get('/wishlist', async (req, res) => {
@@ -343,16 +367,29 @@ async function run() {
   })
 
 
+    // get review for specific user
+    app.get('/allreviews/:email', async (req, res) => {
+      const email = req.params.email
+      const query = { userEmail: email }
+      const result = await reviwesCollection.find(query).toArray()
+      res.send(result)
+    })
+
     // save review data in db
     app.post('/reviews', async (req, res) => {
       const review = req.body
       review.date = new Date()
-      
-
       const result = await reviwesCollection.insertOne(review)
       res.send(result)
     })
   
+    // delete a review
+    app.delete('/reviews/:id', async (req, res) => {
+      const id = req.params.id
+      const query = { _id: new ObjectId(id) }
+      const result = await reviwesCollection.deleteOne(query)
+      res.send(result)
+    })
 
 
 
