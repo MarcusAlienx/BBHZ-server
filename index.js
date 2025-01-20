@@ -156,7 +156,7 @@ async function run() {
     })
 
     // get properties by user use query
-    app.get('/propertie/:email', async (req, res) => {
+    app.get('/property/:email', async (req, res) => {
       const email = req.params.email
       const query = {agentEmail:email}
       const result = await propertiesCollection.find(query).toArray()
@@ -235,6 +235,14 @@ async function run() {
 
     // get all offers
     app.get('/offers', async (req, res) => {
+      const email = req.query.email
+      if (email) {
+        const query = {agentEmail:email}
+        const result = await offersCollection.find(query).toArray()
+        return res.send(result)
+      }
+
+
       const result = await offersCollection.find().toArray()
       res.send(result)
     })
@@ -249,11 +257,48 @@ async function run() {
 
     // save offer data in db
     app.post('/offers', async (req, res) => {
+      
       const offer = req.body
       const result = await offersCollection.insertOne(offer)
       res.send(result)
     })
-
+  
+    app.patch('/offers/:id/accept', async (req, res) => {
+      try {
+        const offerId = req.params.id; // The accepted offer's ID
+        const { propertyId } = req.body; // The property ID associated with the offer
+    
+        // Update the accepted offer's status to "accepted"
+        const acceptQuery = { _id: new ObjectId(offerId) };
+        const acceptUpdate = {
+          $set: {
+            status: 'accepted',
+          },
+        };
+        await offersCollection.updateOne(acceptQuery, acceptUpdate);
+    
+        // Automatically reject all other offers for the same property
+        const rejectQuery = {
+          propertyId: propertyId, // Filter by property ID
+          _id: { $ne: new ObjectId(offerId) }, // Exclude the accepted offer
+        };
+        const rejectUpdate = {
+          $set: {
+            status: 'rejected',
+          },
+        };
+        const rejectResult = await offersCollection.updateMany(rejectQuery, rejectUpdate);
+    
+        res.send({
+          message: 'Offer accepted, and other offers rejected successfully.',
+          rejectedCount: rejectResult.modifiedCount,
+        });
+      } catch (error) {
+        console.error('Error:', error);
+        res.status(500).send({ error: 'Failed to update offers.' });
+      }
+    });
+    
 
 
 
