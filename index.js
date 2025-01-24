@@ -85,6 +85,25 @@ async function run() {
       }
     })
   
+  
+    //get all users
+    
+    app.get('/users', async (req, res) => {
+      const result = await usersCollection.find().toArray()
+      res.send(result)
+    })
+
+
+  //  get all users role
+   app.get('/user/role/:email', async (req, res) => {
+  const email = req.params.email;
+  const query = { email };
+  const result = await usersCollection.findOne(query);
+  res.send({role:result?.role});
+    
+  
+});
+
     // save user data in db
     app.post('/users/:email', async (req, res) => {
       const email = req.params.email
@@ -101,6 +120,29 @@ async function run() {
 
     })
    
+// Update user role
+app.patch('/user/:id', async (req, res) => {
+  const id = req.params.id;
+  const role = req.body.role;
+  const query = { _id: new ObjectId(id) };
+  const updateDoc = {
+    $set: {
+      role: role,
+    },
+  };
+  const result = await usersCollection.updateOne(query, updateDoc);
+  res.send(result);
+});
+
+
+app.delete('/user/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) };
+  const result = await usersCollection.deleteOne(query);
+  res.send(result);
+})
+ 
+
     // save property data in db
     app.post('/properties', async (req, res) => {
       const property = req.body
