@@ -85,7 +85,29 @@ async function run() {
       }
     })
   
-  
+    // verify admin middleware
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.user?.email
+      const query = { email: email }
+      const user = await usersCollection.findOne(query)
+      if (!user || user?.role !== 'admin') {
+        return res.status(403).send({ message: 'forbidden access! ' })
+      }
+      next()
+    }
+ 
+    // verify agent middleware
+    const verifyAgent = async (req, res, next) => {
+      const email = req.user?.email
+      const query = { email: email }
+      const user = await usersCollection.findOne(query)
+      if (!user || user?.role !== 'agent') {
+        return res.status(403).send({ message: 'forbidden access! ' })
+      }
+      next()
+    }
+
+
     //get all users
     
     app.get('/users', async (req, res) => {
