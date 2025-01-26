@@ -5,6 +5,7 @@ const cookieParser = require('cookie-parser')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb')
 const jwt = require('jsonwebtoken')
 const morgan = require('morgan')
+const stripe = require('stripe')(process.env.PAYMENT_KEY);
 
 const port = process.env.PORT || 9000
 const app = express()
@@ -306,11 +307,19 @@ app.delete('/user/:id', async (req, res) => {
     // get all offers
     app.get('/offers', async (req, res) => {
       const email = req.query.email
+      const status = req.query.status
+
+      if(status){
+        const query = {status:status}
+        const result = await offersCollection.find(query).toArray()
+        return res.send(result)
+      }
       if (email) {
         const query = {agentEmail:email}
         const result = await offersCollection.find(query).toArray()
         return res.send(result)
       }
+     
 
 
       const result = await offersCollection.find().toArray()
@@ -371,6 +380,22 @@ app.delete('/user/:id', async (req, res) => {
       }
     });
   
+
+// upadte buying status
+    app.patch('/offers/:id/bought', async (req, res) => {
+      const id = req.params.id
+      const transactionId = req.body
+      const query = { _id: new ObjectId(id) }
+      const result = await offersCollection.updateOne(query, {
+        $set: {
+          status: 'bought',
+          transactionId: transactionId
+        }
+      })
+      res.send(result)
+      
+    })
+
     // reject offer
 
   app.patch('/offers/:id/reject', async (req, res) => {
@@ -436,6 +461,23 @@ app.delete('/user/:id', async (req, res) => {
       res.send(result)
     })
 
+
+// payment intent
+app.post('/create-payment-intent', async (req, res) => {
+  const { offerAmount} = req.body;
+  const amount = parseInt(offerAmount * 100);
+  console.log(amount, 'amount inside the intent')
+
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: amount,
+    currency: 'usd',
+    payment_method_types: ['card']
+  });
+
+  res.send({
+    clientSecret: paymentIntent.client_secret
+  })
+});
 
 
 
