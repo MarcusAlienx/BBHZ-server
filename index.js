@@ -11,7 +11,7 @@ const port = process.env.PORT || 9000
 const app = express()
 // middleware
 const corsOptions = {
-  origin: ['http://localhost:5173', 'http://localhost:5175'],
+  origin: ['http://localhost:5173', 'http://localhost:5175','https://houzezdeal.web.app','https://houzezdeal.firebaseapp.com'],
   credentials: true,
   optionSuccessStatus: 200,
 }
@@ -69,6 +69,7 @@ async function run() {
   
     // verify admin middleware
     const verifyAdmin = async (req, res, next) => {
+      console.log('req.user', req.user);
       const email = req.user?.email
       const query = { email: email }
       const user = await usersCollection.findOne(query)
@@ -92,7 +93,7 @@ async function run() {
 
     //get all users
     
-    app.get('/users', async (req, res) => {
+    app.get('/users',verifyToken,verifyAdmin, async (req, res) => {
       const result = await usersCollection.find().toArray()
       res.send(result)
     })
@@ -125,7 +126,7 @@ async function run() {
     })
    
 // Update user role
-app.patch('/user/:id', async (req, res) => {
+app.patch('/user/:id',verifyToken,verifyAdmin, async (req, res) => {
   const id = req.params.id;
   const role = req.body.role;
   const query = { _id: new ObjectId(id) };
@@ -139,7 +140,7 @@ app.patch('/user/:id', async (req, res) => {
 });
 
 
-app.delete('/user/:id', async (req, res) => {
+app.delete('/user/:id', verifyToken, verifyAdmin, async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) };
   const result = await usersCollection.deleteOne(query);
@@ -148,7 +149,7 @@ app.delete('/user/:id', async (req, res) => {
  
 
     // save property data in db
-    app.post('/properties', async (req, res) => {
+    app.post('/properties',verifyToken,verifyAgent, async (req, res) => {
       const property = req.body
       const result = await propertiesCollection.insertOne(property)
       res.send(result)
@@ -199,7 +200,7 @@ app.delete('/user/:id', async (req, res) => {
       });
       
     // get single property
-    app.get('/propertie/:id', async (req, res) => {
+    app.get('/propertie/:id',verifyToken,verifyAgent, async (req, res) => {
       const id = req.params.id
       const query = { _id: new ObjectId(id) }
       const result = await propertiesCollection.findOne(query)
@@ -207,7 +208,7 @@ app.delete('/user/:id', async (req, res) => {
     })
 
     // get properties by user use query
-    app.get('/property/:email', async (req, res) => {
+    app.get('/property/:email', verifyToken,verifyAgent, async (req, res) => {
       const email = req.params.email
       const query = {agentEmail:email}
       const result = await propertiesCollection.find(query).toArray()
@@ -216,7 +217,7 @@ app.delete('/user/:id', async (req, res) => {
     })
 
     // update property status
-    app.patch('/properties/:id', async (req, res) => {
+    app.patch('/properties/:id',verifyToken,verifyAdmin, async (req, res) => {
         try {
           const id = req.params.id;
           const { verificationStatus } = req.body; 
@@ -251,7 +252,7 @@ app.delete('/user/:id', async (req, res) => {
     
       
     // update property advertisement status
-    app.patch('/properties/:id/advertise', async (req, res) => {
+    app.patch('/properties/:id/advertise', verifyToken,verifyAdmin, async (req, res) => {
       
         const id = req.params.id;
         const { isAdvertised } = req.body;
@@ -270,6 +271,29 @@ app.delete('/user/:id', async (req, res) => {
     });
 
 
+    // update property
+  app.patch('/property/:id', verifyToken,verifyAgent, async (req, res) => {
+    const id = req.params.id
+    const data = req.body
+    const query = { _id: new ObjectId(id) }
+    const options = { upsert: true }
+    const updateDoc = {
+      $set: data
+    }
+    const result = await propertiesCollection.updateOne(query, updateDoc, options)
+    res.send(result)
+
+  })
+
+
+    app.delete('/properties/:id',verifyToken,verifyAgent, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await propertiesCollection.deleteOne(query);
+      res.send(result);
+    })
+
+
     //get all wishlist
     app.get('/wishlist', async (req, res) => {
        const result = await wishlistCollection.find().toArray()
@@ -280,7 +304,7 @@ app.delete('/user/:id', async (req, res) => {
    
 
     // get wishlist by user 
-    app.get('/wishlist/:email', async (req, res) => {
+    app.get('/wishlist/:email',verifyToken, async (req, res) => {
       const email = req.params.email
       const query = {userEmail:email}
       const result = await wishlistCollection.find(query).toArray()
@@ -303,9 +327,16 @@ app.delete('/user/:id', async (req, res) => {
       res.send(result)
     })
   
+    // delete wishlist
+    app.delete('/wishlist/:id',verifyToken, async (req, res) => {
+      const id = req.params.id
+      const query = { _id: new ObjectId(id) }
+      const result = await wishlistCollection.deleteOne(query)
+      res.send(result)
+    })
 
     // get all offers
-    app.get('/offers', async (req, res) => {
+    app.get('/offers',verifyToken,verifyAgent, async (req, res) => {
       const email = req.query.email
       const status = req.query.status
 
@@ -335,7 +366,7 @@ app.delete('/user/:id', async (req, res) => {
     })
 
     // save offer data in db
-    app.post('/offers', async (req, res) => {
+    app.post('/offers',verifyToken, async (req, res) => {
       
       const offer = req.body
       const result = await offersCollection.insertOne(offer)
@@ -344,7 +375,7 @@ app.delete('/user/:id', async (req, res) => {
   
   // update offer status
 
-    app.patch('/offers/:id/accept', async (req, res) => {
+    app.patch('/offers/:id/accept', verifyToken,verifyAgent, async (req, res) => {
       try {
         const offerId = req.params.id; 
         const { propertyId } = req.body; 
@@ -382,7 +413,7 @@ app.delete('/user/:id', async (req, res) => {
   
 
 // upadte buying status
-    app.patch('/offers/:id/bought', async (req, res) => {
+    app.patch('/offers/:id/bought',verifyToken, async (req, res) => {
       const id = req.params.id
       const transactionId = req.body
       const query = { _id: new ObjectId(id) }
@@ -398,7 +429,7 @@ app.delete('/user/:id', async (req, res) => {
 
     // reject offer
 
-  app.patch('/offers/:id/reject', async (req, res) => {
+  app.patch('/offers/:id/reject',verifyToken,verifyAgent, async (req, res) => {
     try {
       const offerId = req.params.id; 
       const { propertyId } = req.body; 
@@ -422,7 +453,7 @@ app.delete('/user/:id', async (req, res) => {
 
 
     // get all reviews
-    app.get('/reviews', async (req, res) => {
+    app.get('/reviews',verifyToken,verifyAdmin, async (req, res) => {
       const result = await reviwesCollection.find().toArray()
       res.send(result)
     })
@@ -438,7 +469,7 @@ app.delete('/user/:id', async (req, res) => {
 
 
     // get review for specific user
-    app.get('/allreviews/:email', async (req, res) => {
+    app.get('/allreviews/:email',verifyToken, async (req, res) => {
       const email = req.params.email
       const query = { userEmail: email }
       const result = await reviwesCollection.find(query).toArray()
@@ -446,7 +477,7 @@ app.delete('/user/:id', async (req, res) => {
     })
 
     // save review data in db
-    app.post('/reviews', async (req, res) => {
+    app.post('/reviews',verifyToken, async (req, res) => {
       const review = req.body
       review.date = new Date()
       const result = await reviwesCollection.insertOne(review)
@@ -454,7 +485,7 @@ app.delete('/user/:id', async (req, res) => {
     })
   
     // delete a review
-    app.delete('/reviews/:id', async (req, res) => {
+    app.delete('/reviews/:id',verifyToken, async (req, res) => {
       const id = req.params.id
       const query = { _id: new ObjectId(id) }
       const result = await reviwesCollection.deleteOne(query)
@@ -482,10 +513,10 @@ app.post('/create-payment-intent', async (req, res) => {
 
 
     // Send a ping to confirm a successful connection
-    await client.db('admin').command({ ping: 1 })
-    console.log(
-      'Pinged your deployment. You successfully connected to MongoDB!'
-    )
+    // await client.db('admin').command({ ping: 1 })
+    // console.log(
+    //   'Pinged your deployment. You successfully connected to MongoDB!'
+    // )
   } finally {
     // Ensures that the client will close when you finish/error
   }
