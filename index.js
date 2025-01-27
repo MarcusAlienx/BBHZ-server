@@ -149,16 +149,33 @@ app.patch('/user/:id',verifyToken,verifyAdmin, async (req, res) => {
 });
 
 
+// update fraud
+
+app.patch('/user/fraud/:id',verifyToken,verifyAdmin, async (req, res) => {
+  const id = req.params.id;
+  const fraud = req.body.isFraud;
+  const query = { _id: new ObjectId(id) };
+  const updateDoc = {
+    $set: {
+     isFraud: fraud,
+    },
+  };
+  const result = await usersCollection.updateOne(query, updateDoc);
+  res.send(result);
+
+
+})
+
+
+
+// delete user from db and firebase
 app.delete("/users/delete/:id",verifyToken,verifyAdmin,async (req, res) => {
     try {
       const userId = req.params.id;
-
-      // Validate ObjectId
       if (!ObjectId.isValid(userId)) {
         return res.status(400).json({ message: "Invalid user ID" });
       }
 
-      // Find user in MongoDB
       const user = await usersCollection.findOne({
         _id: new ObjectId(userId),
       });
