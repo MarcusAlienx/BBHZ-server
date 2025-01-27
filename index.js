@@ -151,20 +151,51 @@ app.patch('/user/:id',verifyToken,verifyAdmin, async (req, res) => {
 
 // update fraud
 
-app.patch('/user/fraud/:id',verifyToken,verifyAdmin, async (req, res) => {
+app.patch('/user/fraud/:id', verifyToken, verifyAdmin, async (req, res) => {
   const id = req.params.id;
-  const fraud = req.body.isFraud;
-  const query = { _id: new ObjectId(id) };
-  const updateDoc = {
-    $set: {
-     isFraud: fraud,
-    },
-  };
-  const result = await usersCollection.updateOne(query, updateDoc);
-  res.send(result);
+  const fraud = req.body.isFraud;  // true or false indicating if the user should be marked as fraud
 
+  try {
+      // Step 1: Update the user's fraud status
+      const query = { _id: new ObjectId(id) };
+      const updateDoc = {
+          $set: {
+              isFraud: fraud,
+          },
+      };
 
-})
+      // Update the user's fraud status
+      const result = await usersCollection.updateOne(query, updateDoc);
+
+      if (result.matchedCount === 0) {
+          return res.status(404).send({ message: 'User not found' });
+      }
+
+      // Step 2: Update all properties added by this user (using agentEmail) to unverified
+      const user = await usersCollection.findOne(query);  // Get the user details
+
+      if (!user) {
+          return res.status(404).send({ message: 'User not found' });
+      }
+
+      const agentEmail = user.email;  // Assuming the user's email is the identifier
+
+      const propertiesUpdateResult = await propertiesCollection.updateMany(
+          { agentEmail: agentEmail },  // Find properties by agentEmail
+          { $set: { verified: false, verificationStatus: "unverified" } }  // Update the verified field
+      );
+
+      console.log(`${propertiesUpdateResult.modifiedCount} properties updated to unverified.`);
+
+      // Send a success response
+      res.send({ message: 'User marked as fraud, properties updated to unverified.' });
+
+  } catch (error) {
+      console.error("An error occurred:", error);
+      res.status(500).send({ message: 'An error occurred while updating the user and properties.' });
+  }
+});
+
 
 
 
@@ -222,11 +253,31 @@ app.delete("/users/delete/:id",verifyToken,verifyAdmin,async (req, res) => {
  
 
     // save property data in db
-    app.post('/properties',verifyToken,verifyAgent, async (req, res) => {
-      const property = req.body
-      const result = await propertiesCollection.insertOne(property)
-      res.send(result)
-    })
+    app.post('/properties', verifyToken, verifyAgent, async (req, res) => {
+      const agentEmail = req.user?.email;  // Assuming `req.user.email` contains the agent's email after verifying the token
+      const property = req.body;
+  
+      try {
+          // Step 1: Check if the agent is marked as fraud using their email
+          const agent = await usersCollection.findOne({ email: agentEmail });
+  
+          if (!agent) {
+              return res.status(404).send({ message: 'Agent not found' });
+          }
+  
+          if (agent.isFraud) {
+              return res.send({ message: 'Fraud agents cannot add properties' });
+          }
+  
+          // Step 2: If the agent is not fraud, allow adding the property
+          const result = await propertiesCollection.insertOne(property);
+          res.status(201).send(result);  // Send a success response
+      } catch (error) {
+          console.error("An error occurred:", error);
+          res.status(500).send({ message: 'An error occurred while adding the property' });
+      }
+  });
+  
 
     // get all properties
     app.get('/properties', async (req, res) => {
