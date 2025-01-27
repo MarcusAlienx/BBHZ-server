@@ -6,6 +6,15 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb')
 const jwt = require('jsonwebtoken')
 const morgan = require('morgan')
 const stripe = require('stripe')(process.env.PAYMENT_KEY);
+var admin = require("firebase-admin");
+var serviceAccount = require("./config/houzezdeal-firebase-adminsdk-eye4c-f4a1bc0ff4.json");
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+
+
+
+
 
 const port = process.env.PORT || 9000
 const app = express()
@@ -140,12 +149,59 @@ app.patch('/user/:id',verifyToken,verifyAdmin, async (req, res) => {
 });
 
 
-app.delete('/user/:id', verifyToken, verifyAdmin, async (req, res) => {
-  const id = req.params.id;
-  const query = { _id: new ObjectId(id) };
-  const result = await usersCollection.deleteOne(query);
-  res.send(result);
-})
+app.delete("/users/delete/:id",verifyToken,verifyAdmin,async (req, res) => {
+    try {
+      const userId = req.params.id;
+
+      // Validate ObjectId
+      if (!ObjectId.isValid(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+
+      // Find user in MongoDB
+      const user = await usersCollection.findOne({
+        _id: new ObjectId(userId),
+      });
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found in MongoDB" });
+      }
+
+      // Delete user from MongoDB
+      const result = await usersCollection.deleteOne({
+        _id: new ObjectId(userId),
+      });
+
+      if (result.deletedCount > 0) {
+        // Attempt to delete the user from Firebase
+        try {
+          const firebaseUser = await admin.auth().getUserByEmail(user.email);
+          await admin.auth().deleteUser(firebaseUser.uid);
+          console.log(`Deleted user: ${user.email} from Firebase`);
+
+          res.status(200).json({
+            message: "User deleted from MongoDB and Firebase",
+          });
+        } catch (firebaseError) {
+          console.error(
+            "Error deleting user from Firebase:",
+            firebaseError.message
+          );
+          return res.status(500).json({
+            message: "User deleted from MongoDB, but not from Firebase",
+            error: firebaseError.message,
+          });
+        }
+      } else {
+        return res.status(404).json({ message: "User not found in MongoDB" });
+      }
+    } catch (error) {
+      console.error("Server error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  }
+);
+
  
 
     // save property data in db
@@ -190,7 +246,7 @@ app.delete('/user/:id', verifyToken, verifyAdmin, async (req, res) => {
           }
       
           
-          const result = await propertiesCollection.find(query).sort(sort).toArray();
+          const result = await propertiesCollection.find(query||{}).sort(sort).toArray();
       
           res.send(result);
         } catch (error) {
@@ -200,7 +256,7 @@ app.delete('/user/:id', verifyToken, verifyAdmin, async (req, res) => {
       });
       
     // get single property
-    app.get('/propertie/:id',verifyToken,verifyAgent, async (req, res) => {
+    app.get('/propertie/:id',verifyToken, async (req, res) => {
       const id = req.params.id
       const query = { _id: new ObjectId(id) }
       const result = await propertiesCollection.findOne(query)
@@ -453,7 +509,7 @@ app.delete('/user/:id', verifyToken, verifyAdmin, async (req, res) => {
 
 
     // get all reviews
-    app.get('/reviews',verifyToken,verifyAdmin, async (req, res) => {
+    app.get('/reviews', async (req, res) => {
       const result = await reviwesCollection.find().toArray()
       res.send(result)
     })
