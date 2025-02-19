@@ -153,10 +153,10 @@ app.patch('/user/:id',verifyToken,verifyAdmin, async (req, res) => {
 
 app.patch('/user/fraud/:id', verifyToken, verifyAdmin, async (req, res) => {
   const id = req.params.id;
-  const fraud = req.body.isFraud;  // true or false indicating if the user should be marked as fraud
+  const fraud = req.body.isFraud;  
 
   try {
-      // Step 1: Update the user's fraud status
+     
       const query = { _id: new ObjectId(id) };
       const updateDoc = {
           $set: {
@@ -164,30 +164,30 @@ app.patch('/user/fraud/:id', verifyToken, verifyAdmin, async (req, res) => {
           },
       };
 
-      // Update the user's fraud status
+
       const result = await usersCollection.updateOne(query, updateDoc);
 
       if (result.matchedCount === 0) {
           return res.status(404).send({ message: 'User not found' });
       }
 
-      // Step 2: Update all properties added by this user (using agentEmail) to unverified
-      const user = await usersCollection.findOne(query);  // Get the user details
+    
+      const user = await usersCollection.findOne(query);  
 
       if (!user) {
           return res.status(404).send({ message: 'User not found' });
       }
 
-      const agentEmail = user.email;  // Assuming the user's email is the identifier
+      const agentEmail = user.email; 
 
       const propertiesUpdateResult = await propertiesCollection.updateMany(
-          { agentEmail: agentEmail },  // Find properties by agentEmail
-          { $set: { verified: false, verificationStatus: "unverified" } }  // Update the verified field
+          { agentEmail: agentEmail },  
+          { $set: { verified: false, verificationStatus: "unverified" } }  
       );
 
       console.log(`${propertiesUpdateResult.modifiedCount} properties updated to unverified.`);
 
-      // Send a success response
+     
       res.send({ message: 'User marked as fraud, properties updated to unverified.' });
 
   } catch (error) {
@@ -578,7 +578,7 @@ app.delete("/users/delete/:id",verifyToken,verifyAdmin,async (req, res) => {
 
     // get all reviews
     app.get('/reviews', async (req, res) => {
-      const result = await reviwesCollection.find().toArray()
+      const result = await reviwesCollection.find().sort({ date: -1 }).toArray()
       res.send(result)
     })
    
