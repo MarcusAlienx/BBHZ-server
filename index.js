@@ -648,9 +648,9 @@ app.post('/create-payment-intent', async (req, res) => {
 run().catch(console.dir)
 
 app.get('/', (req, res) => {
-  res.send('Hello from houzez Server..')
+  res.send('Hello from BuscaBodegas Server..')
 })
 
 app.listen(port, () => {
-  console.log(`houzez is running on port ${port}`)
+  console.log(`BuscaBodegas is running on port ${port}`)
 })

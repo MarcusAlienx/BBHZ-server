@@ -1,0 +1,12 @@
+specVersion: "v1"
+serviceId: "buscabodega-1696627429011"
+location: "us-central1"
+schema:
+  source: "./schema"
+  datasource:
+    postgresql:
+      database: "bb_data"
+      cloudSql:
+        instanceId: "buscabodega-1696627429011"
+      # schemaValidation: "COMPATIBLE"
+connectorDirs: ["./connector"]
