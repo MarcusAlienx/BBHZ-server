@@ -1,7 +1,7 @@
 # API Documentation
 
 ## Base URL
-`https://houzez-server.vercel.app/api`
+`https://buscabodegas-server.vercel.app/api` (Example URL - replace with actual deployment URL)
 
 ---
 
@@ -282,4 +282,3 @@
       "success": true,
       "message": "Offer updated"
     }
-    

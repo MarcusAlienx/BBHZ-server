@@ -1,4 +1,5 @@
-const functions = require("firebase-functions/v2/https");
+require('dotenv').config(); // Load environment variables from .env file
+const functions = require("firebase-functions"); // Corrected import for v1 onRequest export style
 const admin = require("firebase-admin");
 const express = require("express");
 const cors = require("cors");
@@ -18,7 +19,7 @@ const corsOptions = {
   origin: [
     "http://localhost:5173",
     "http://localhost:5175",
-    //"https://houzezdeal.web.app", // Example deployed frontend
+    //"https://buscabodegas.web.app", // Example deployed frontend (replace if needed)
     // Your Firebase project's hosting URL
     "https://buscabodega-1696627429011.web.app",
     // Alternative Firebase hosting URL
@@ -121,7 +122,7 @@ app.get("/", (req, res) => {
   res.send("Hello from Buscabodegas Firebase Server!");
 });
 
-// get all users
+//get all users
 app.get("/users", verifyFirebaseToken, verifyAdmin, async (req, res) => {
   try {
     const snapshot = await usersCollection.get();
@@ -1486,3 +1487,31 @@ app.post("/create-payment-intent", verifyFirebaseToken, async (req, res) => {
       currency: "usd", // Or your desired currency
       metadata: {offerId: offerId, buyerUid: req.user.uid}, // Link payment
       // Add other parameters as needed, e.g., payment_method_types: ['card']
+    });
+
+    res.status(200).send({clientSecret: paymentIntent.client_secret});
+  } catch (error) {
+    console.error(
+        `Error creating payment intent for offer ${offerId} by user ${req.user.uid}:`,
+        error,
+    );
+    // Handle specific Stripe errors if needed
+    res.status(500).send({
+      message: "Failed to create payment intent.", error: error.message,
+    });
+  }
+});
+
+// --- End Routes ---
+
+
+// Start the server for Cloud Run
+// Note: The original app.listen() is removed as Cloud Functions handles the server lifecycle.
+// Note: MongoDB connection logic is removed.
+// Note: Direct Firebase Admin initialization with service account file is removed.
+// Note: dotenv require is removed. Environment variables are handled differently.
+
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
+});

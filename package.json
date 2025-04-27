@@ -1,28 +1,20 @@
 {
-  "name": "houzez-server",
+  "name": "bbhz-server",
   "version": "1.0.0",
-  "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "Backend server for BuscaBodegas",
   "dependencies": {
     "@firebasegen/default-connector": "file:dataconnect-generated/js/default-connector",
     "@genkit-ai/googleai": "^1.6.2",
-    "cookie-parser": "^1.4.7",
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.7",
-    "express": "^4.21.2",
+    "@google-cloud/documentai": "^9.1.0",
+    "@google-cloud/filestore": "^4.0.1",
+    "@google-cloud/storage-control": "^0.4.0",
     "firebase": "^11.6.1",
     "firebase-admin": "^13.0.2",
-    "genkit": "^1.6.2",
-    "jsonwebtoken": "^9.0.2",
-    "mongodb": "^6.12.0",
-    "morgan": "^1.10.0",
-    "stripe": "^17.5.0"
+    "genkit": "^1.6.2"
   }
 }
